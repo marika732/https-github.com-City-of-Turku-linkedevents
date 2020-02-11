@@ -11,6 +11,17 @@ from django.core.exceptions import ImproperlyConfigured
 
 CONFIG_FILE_NAME = "config_dev.toml"
 
+if os.name == 'nt':
+    import platform
+    OSGEO4W = r"C:\OSGeo4W"
+    if '64' in platform.architecture()[0]:
+        OSGEO4W += "64"
+    assert os.path.isdir(OSGEO4W), "Directory does not exist: " + OSGEO4W
+    os.environ['OSGEO4W_ROOT'] = OSGEO4W
+    os.environ['GDAL_DATA'] = OSGEO4W + r"\share\gdal"
+    os.environ['PROJ_LIB'] = OSGEO4W + r"\share\proj"
+    os.environ['PATH'] = OSGEO4W + r"\bin;" + os.environ['PATH']
+
 
 def get_git_revision_hash() -> str:
     """
@@ -36,7 +47,7 @@ def get_git_revision_hash() -> str:
 
 root = environ.Path(__file__) - 2  # two levels back in hierarchy
 env = environ.Env(
-    DEBUG=(bool, False),
+    DEBUG=(bool, True),
     SYSTEM_DATA_SOURCE_ID=(str, 'system'),
     LANGUAGES=(list, ['fi', 'sv', 'en', 'zh-hans', 'ru', 'ar']),
     DATABASE_URL=(str, 'postgis:///linkedevents'),
@@ -44,7 +55,7 @@ env = environ.Env(
     TOKEN_AUTH_SHARED_SECRET=(str, ''),
     ELASTICSEARCH_URL=(str, None),
     SECRET_KEY=(str, ''),
-    ALLOWED_HOSTS=(list, []),
+    ALLOWED_HOSTS=(list, ['localhost']),
     ADMINS=(list, []),
     SECURE_PROXY_SSL_HEADER=(tuple, None),
     MEDIA_ROOT=(environ.Path(), root('media')),
@@ -83,9 +94,22 @@ ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 ADMINS = env('ADMINS')
 INTERNAL_IPS = env('INTERNAL_IPS',
                    default=(['127.0.0.1'] if DEBUG else []))
+
 DATABASES = {
-    'default': env.db()
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'linkedevents',
+        'USER': 'postgres',
+        'PASSWORD': '123abc',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
+
+
+#DATABASES = {
+#   'default': env.db()
+#}
 
 SYSTEM_DATA_SOURCE_ID = env('SYSTEM_DATA_SOURCE_ID')
 
@@ -213,10 +237,13 @@ IMPORT_FILE_PATH = os.path.join(BASE_DIR, 'data')
 
 # Static files (CSS, JavaScript, Images)
 
+#STATIC_URL = env('STATIC_URL')
+
 STATIC_URL = env('STATIC_URL')
 MEDIA_URL = env('MEDIA_URL')
 STATIC_ROOT = env('STATIC_ROOT')
 MEDIA_ROOT = env('MEDIA_ROOT')
+
 
 # Whether to trust X-Forwarded-Host headers for all purposes
 # where Django would need to make use of its own hostname

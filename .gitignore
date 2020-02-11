@@ -15,6 +15,9 @@ media/
 data/
 .pytest_cache/
 templates/rest_framework/*
+env/
+static/
+.vscode/
 
 
 
